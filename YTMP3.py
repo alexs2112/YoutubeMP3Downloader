@@ -220,7 +220,13 @@ class Application:
         song.set_tag("artist", self.song_artist.get())
         song.set_tag("album", self.song_album.get())
         song.set_tag("title", self.song_songname.get())
-        song.set_tag("track_num", self.song_track_num.get())
+
+        tracknum = self.song_track_num.get()
+        if tracknum.isnumeric():
+            song.set_tag("track_num", self.song_track_num.get())
+        elif tracknum != "":
+            self.debug("Only input positive integers for track number.")
+
         try:
             song.save_tags()
         except Exception as e:
