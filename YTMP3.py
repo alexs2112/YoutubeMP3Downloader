@@ -101,10 +101,17 @@ class Application:
         self.save_song_button.bind("<Button-1>", self.save_song)
         self.save_song_button.pack()
 
+        self.refresh_songs_frame = tkinter.Frame(master=self.song_frame, bg=self.colour_background)
+        self.refresh_songs_frame.grid(row=3, column=1)
+        self.refresh_songs_button = tkinter.Button(master=self.refresh_songs_frame, text="Refresh Songs", padx=10, pady=2)
+        self.refresh_songs_button.bind("<Button-1>", self.initialize_songs)
+        self.refresh_songs_button.pack()
+
         self.bot_frame = tkinter.Frame(bg=self.colour_background)
         self.bot_frame.grid(row=1, column=0)
         self.console = tkinter.Text(master=self.bot_frame, height=20, bg=self.colour_foreground)
         self.console.pack(fill=tkinter.BOTH, expand=True)
+
 
     def start(self):
         self.window.mainloop()
@@ -148,6 +155,7 @@ class Application:
                 except Exception as e:
                     self.error(f"Failed to rename {data['title']}-{data['id']}.mp3")
                     print(e)
+                    self.add_song(f"{data['title']}-{data['id']}.mp3")
                     continue
                 self.add_song(f"{data['title']}.mp3")
             except Exception as e:
@@ -162,8 +170,9 @@ class Application:
 
         self.print(f"\nDownload Complete!\nFiles located at {self.path}\n")
 
-    def initialize_songs(self):
+    def initialize_songs(self, _=None):
         files = os.listdir()
+        self.songs = []
         for f in files:
             n = f.rsplit('.', 1)
             if len(n) > 1 and n[1] == "mp3":
@@ -234,15 +243,18 @@ class Application:
             print(e)
             return
 
-        if self.song_filename.get() != self.selected_song.get():
+        new_fn = self.song_filename.get()
+        if new_fn != self.selected_song.get():
             i = self.songs.index(self.selected_song.get())
-            self.songs[i] = self.song_filename.get()
+            if '.mp3' not in new_fn:
+                new_fn += '.mp3'
+            self.songs[i] = new_fn
             try:
-                os.rename(self.selected_song.get(), self.song_filename.get())
+                os.rename(self.selected_song.get(), new_fn)
             except Exception as e:
                 print(e)
                 self.error(f"Failed to rename {self.selected_song.get()}.mp3")
-                self.error("Please restart.")
+                self.error("Please refresh.")
         self.debug(f"Song updated successfully!")
         self.update_songs()
         self.clear_song()
