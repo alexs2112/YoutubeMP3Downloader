@@ -48,7 +48,7 @@ class Application:
 
         self.input_title = tkinter.Label(master=self.input_frame, text="Youtube URLs:", pady=6, bg=self.colour_background)
         self.input_title.grid(row=0, column=0)
-        self.song_input = tkinter.Text(master=self.input_frame, width=30, height=15, bg=self.colour_foreground)
+        self.song_input = tkinter.Text(master=self.input_frame, width=30, height=15, bg=self.colour_foreground, undo=True)
         self.song_input.grid(row=1, column=0)
 
         self.dl_button = tkinter.Button(master=self.input_frame, text="Start Download...", padx=10, pady=2)
@@ -92,6 +92,7 @@ class Application:
 
         self.field_track_num = tkinter.Label(master=self.field_frame, text="Track Number:", padx=10, bg=self.colour_background)
         self.song_track_num = tkinter.Entry(master=self.entry_frame, bg=self.colour_foreground)
+        self.song_track_num.bind("<Return>", self.save_song)
         self.field_track_num.pack()
         self.song_track_num.pack()
 
@@ -112,6 +113,11 @@ class Application:
         self.console = tkinter.Text(master=self.bot_frame, height=20, bg=self.colour_foreground)
         self.console.pack(fill=tkinter.BOTH, expand=True)
 
+        # Pressing ENTER on the entry fields do the same as tab
+        self.song_filename.bind("<Return>", lambda _: self.song_songname.focus_set())
+        self.song_songname.bind("<Return>", lambda _: self.song_artist.focus_set())
+        self.song_artist.bind("<Return>", lambda _: self.song_album.focus_set())
+        self.song_album.bind("<Return>", lambda _: self.song_track_num.focus_set())
 
     def start(self):
         self.window.mainloop()
