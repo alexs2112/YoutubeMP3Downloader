@@ -31,6 +31,7 @@ class Application:
     def __init__(self):
         self.window = tkinter.Tk()
         self.window.title("Youtube to MP3")
+        self.window.resizable(False, False)
         self.last_log = None
         self.path = Path().absolute()
         self.songs = []
@@ -183,9 +184,8 @@ class Application:
             n = f.rsplit('.', 1)
             if len(n) > 1 and n[1] == "mp3":
                 self.songs.append(f)
-        if len(self.songs) > 0:
-            self.debug(f"{len(self.songs)} songs loaded.")
-            self.update_songs()
+        self.debug(f"{len(self.songs)} songs loaded.")
+        self.update_songs()
 
     def update_songs(self):
         menu = self.song_options["menu"]
