@@ -125,6 +125,7 @@ class Application:
 
     def start_download(self, _):
         if threading.active_count() < 2:
+            self.debug("Initializing download.")
             self.thread = threading.Thread(target=self.download)
             self.thread.daemon = True
             self.thread.start()
@@ -137,6 +138,13 @@ class Application:
         for link in data:
             if "youtu.be" in link or "playlist" in link:
                 songs.append(link)
+            elif "www.youtube.com" in link:
+                video_code = link.split("?v=")
+                if len(video_code) == 2:
+                    code = video_code[1].split("&")[0]
+                    songs.append(f"https://youtu.be/{code}")
+                else:
+                    self.error(f"Could not split {link} by '?v='")
 
         if (len(songs) == 0):
             self.error("No songs to download")
