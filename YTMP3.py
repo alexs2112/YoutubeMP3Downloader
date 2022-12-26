@@ -126,7 +126,6 @@ class Application:
         self.song_album.bind("<Return>", self.tab_album)
         self.song_album.bind("<Tab>", self.tab_album)
 
-
     def tab_songname(self, _):
         self.song_artist.focus_set()
         if len(self.song_songname.get()) == 0:
@@ -159,8 +158,12 @@ class Application:
         data = self.song_input.get("1.0", tkinter.END).split('\n')
         songs = []
         for link in data:
-            if "youtu.be" in link or "playlist" in link:
+            if "youtu.be" in link:
                 songs.append(link)
+            elif "playlist" in link:
+                ids = self.get_playlist_songs(link)
+                for id in ids:
+                    songs.append(f"https://youtu.be/{id}")
             elif "www.youtube.com" in link:
                 video_code = link.split("?v=")
                 if len(video_code) == 2:
@@ -210,6 +213,19 @@ class Application:
                 self.print(songs[i])
 
         self.print(f"\nDownload Complete!\nFiles located at {self.path}\n")
+
+    def get_playlist_songs(self, url):
+        out = []
+        download = YoutubeDL({"simulate": True, "quiet": True})
+        self.debug("Downloading playlist data.")
+        with download:
+            data = download.extract_info(url, download=False)
+            if 'entries' in data:
+                video = data['entries']
+                for i, _ in enumerate(video):
+                    out.append(data['entries'][i]['id'])
+        self.debug(f"Found {str(len(out))} songs.")
+        return out
 
     def initialize_songs(self, _=None):
         files = os.listdir()
