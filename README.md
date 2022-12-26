@@ -25,11 +25,9 @@ Additional functionality to set MP3 metadata and rename those files once they ha
 ### Known Bugs:
  - Sometimes a youtube video download will randomly fail with a `403 Forbidden` error. It will keep track of each failure and paste the link at the bottom of the console logs once downloads are complete. You can retry the list afterwards and it will usually work on a second try. This is a problem with youtube.
  - Some weird graphical glitches in the song drop-down box occur sometimes when songs are downloaded into an empty directory, this usually cleans itself up as more are downloaded.
- - The app has a hard time renaming mp3 files with quotations in the name, you will have to manually rename those before reloading the songs.
 
 ### Eventual Roadmap:
  - Turn it into an executable file to save songs to a custom directory
- - Fix renaming songs to rename files with various punctuation marks present in the name
  - Multithreading to download multiple songs at once (requires UI update to display progress differently)
  - Add songs to a download queue while a download is in progress
  - Refreshing songs shouldn't rearrange the order they are currently in

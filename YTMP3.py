@@ -188,14 +188,17 @@ class Application:
             url = songs[i]
             try:
                 data = audio.extract_info(url)
+                data['title'] = data['title'].replace('"', "'")
+                oldtitle = f"{data['title']}-{data['id']}.mp3"
+                newtitle = f"{data['title']}.mp3"
                 try:
-                    os.rename(f"{data['title']}-{data['id']}.mp3", f"{data['title']}.mp3")
+                    os.rename(oldtitle, newtitle)
                 except Exception as e:
-                    self.error(f"Failed to rename {data['title']}-{data['id']}.mp3")
+                    self.error(f"Failed to rename {oldtitle}")
                     print(e)
-                    self.add_song(f"{data['title']}-{data['id']}.mp3")
+                    self.add_song(oldtitle)
                     continue
-                self.add_song(f"{data['title']}.mp3")
+                self.add_song(newtitle)
             except Exception as e:
                 print(e)
                 failed.append(i)
@@ -251,6 +254,7 @@ class Application:
         self.song_artist.insert(0, song.get_tag('artist'))
         self.song_album.insert(0, song.get_tag('album'))
         self.song_track_num.insert(0, song.get_tag('track_num'))
+        self.song_filename.focus_set()
 
     def clear_song(self):
         self.song_filename.delete(0, tkinter.END)
