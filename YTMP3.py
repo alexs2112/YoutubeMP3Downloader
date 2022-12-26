@@ -7,6 +7,9 @@ class Song:
         self.filename = file
         self.file = eyed3.load(file)
 
+        self.last_artist = ""
+        self.last_album = ""
+
     def set_tag(self, tag, value):
         if tag == "artist": self.file.tag.artist = value
         elif tag == "album": self.file.tag.album = value
@@ -114,11 +117,31 @@ class Application:
         self.console = tkinter.Text(master=self.bot_frame, height=20, bg=self.colour_foreground)
         self.console.pack(fill=tkinter.BOTH, expand=True)
 
-        # Pressing ENTER on the entry fields do the same as tab
+        # Pressing ENTER on the entry fields go to the next field and auto populate if needed
         self.song_filename.bind("<Return>", lambda _: self.song_songname.focus_set())
-        self.song_songname.bind("<Return>", lambda _: self.song_artist.focus_set())
-        self.song_artist.bind("<Return>", lambda _: self.song_album.focus_set())
-        self.song_album.bind("<Return>", lambda _: self.song_track_num.focus_set())
+        self.song_songname.bind("<Return>", self.tab_songname)
+        self.song_songname.bind("<Tab>", self.tab_songname)
+        self.song_artist.bind("<Return>", self.tab_artist)
+        self.song_artist.bind("<Tab>", self.tab_artist)
+        self.song_album.bind("<Return>", self.tab_album)
+        self.song_album.bind("<Tab>", self.tab_album)
+
+
+    def tab_songname(self, _):
+        self.song_artist.focus_set()
+        if len(self.song_songname.get()) == 0:
+            path = self.song_filename.get()
+            self.song_songname.insert(0, path.rsplit(".mp3")[0])
+    
+    def tab_artist(self, _):
+        self.song_album.focus_set()
+        if len(self.song_artist.get()) == 0 and self.last_artist:
+            self.song_artist.insert(0, self.last_artist)
+    
+    def tab_album(self, _):
+        self.song_track_num.focus_set()
+        if len(self.song_album.get()) == 0 and self.last_album:
+            self.song_album.insert(0, self.last_album)
 
     def start(self):
         self.window.mainloop()
@@ -243,6 +266,8 @@ class Application:
         song.set_tag("artist", self.song_artist.get())
         song.set_tag("album", self.song_album.get())
         song.set_tag("title", self.song_songname.get())
+        self.last_artist = self.song_artist.get()
+        self.last_album = self.song_album.get()
 
         tracknum = self.song_track_num.get()
         if tracknum.isnumeric():
