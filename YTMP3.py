@@ -229,11 +229,24 @@ class Application:
 
     def initialize_songs(self, _=None):
         files = os.listdir()
-        self.songs = []
+        new_songs = []
         for f in files:
             n = f.rsplit('.', 1)
             if len(n) > 1 and n[1] == "mp3":
-                self.songs.append(f)
+                new_songs.append(f)
+
+        # If the song loaded is already in songs, leave it there
+        new_new_songs = []
+        for song in self.songs:
+            if song in new_songs:
+                new_new_songs.append(song)
+                new_songs.remove(song)
+
+        # If the song loaded isn't already in songs, append it
+        for song in new_songs:
+            new_new_songs.append(song)
+        self.songs = new_new_songs
+
         self.debug(f"{len(self.songs)} songs loaded.")
         self.update_songs()
 
