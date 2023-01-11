@@ -218,12 +218,16 @@ class Application:
         out = []
         download = YoutubeDL({"simulate": True, "quiet": True})
         self.debug("Downloading playlist data.")
-        with download:
-            data = download.extract_info(url, download=False)
-            if 'entries' in data:
-                video = data['entries']
-                for i, _ in enumerate(video):
-                    out.append(data['entries'][i]['id'])
+        try:
+            with download:
+                data = download.extract_info(url, download=False)
+                if 'entries' in data:
+                    video = data['entries']
+                    for i, _ in enumerate(video):
+                        out.append(data['entries'][i]['id'])
+        except Exception as e:
+            self.error("Could not retrieve playlist data.")
+            print(e)
         self.debug(f"Found {str(len(out))} songs.")
         return out
 
