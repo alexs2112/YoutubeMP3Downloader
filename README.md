@@ -3,7 +3,7 @@ A simple tkinter UI that handles downloading music from youtube videos or playli
 
 Additional functionality to set MP3 metadata and rename those files once they have been downloaded.
 
-![resources/Screenshot](Screenshot.png)
+![Screenshot.png](resources/Screenshot.png)
 
 ### Usage
  - Copy and paste youtube video links into the input text box
