@@ -1,4 +1,8 @@
 __pycache__/
+build/
+dist/
+temp/
+*.spec
 *.mp3
 *.part
 *.m4a

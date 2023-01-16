@@ -1,11 +1,10 @@
-import tkinter, threading, os, eyed3
-from pathlib import Path
+import tkinter, tkinter.filedialog, threading, os, sys, eyed3
 from youtube_dl import YoutubeDL
 
 class Song:
-    def __init__(self, file):
+    def __init__(self, file, path):
         self.filename = file
-        self.file = eyed3.load(file)
+        self.file = eyed3.load(os.path.join(path, file))
 
         self.last_artist = ""
         self.last_album = ""
@@ -35,12 +34,15 @@ class Application:
         self.window = tkinter.Tk()
         self.window.title("Youtube to MP3")
         self.window.resizable(False, False)
+        self.window.iconbitmap(self.icon_path("icon.ico"))
         self.last_log = None
-        self.path = Path().absolute()
+        self.last_artist = ""
+        self.last_album = ""
         self.songs = []
         self.selected_song = tkinter.StringVar()
         self.initialize_colours()
         self.setup()
+        self.reset_directory()
         self.initialize_songs()
 
     def setup(self):
@@ -59,15 +61,19 @@ class Application:
         self.dl_button.bind("<Button-1>", self.start_download)
         self.dl_button.grid(row=2, column=0)
 
-        self.song_frame = tkinter.Frame(master=self.top_frame, bg=self.colour_background)
-        self.song_frame.grid(row=0, column=1)
+        self.right_frame = tkinter.Frame(master=self.top_frame, bg=self.colour_background)
+        self.right_frame.grid(row=0, column=1)
+        self.song_frame = tkinter.Frame(master=self.right_frame, bg=self.colour_background)
+        self.song_frame.grid(row=0, column=0, pady=20, sticky="W")
 
+        # SELECT SONG
         self.select_song_frame = tkinter.Frame(master=self.song_frame, bg=self.colour_background)
         self.select_song_frame.grid(row=0, column=1)
         self.song_options = tkinter.OptionMenu(self.select_song_frame, self.selected_song, None, [])
         self.song_options.bind("<Configure>", self.select_song)
         self.song_options.pack()
 
+        # SET SONG DETAILS
         self.field_frame = tkinter.Frame(master=self.song_frame, bg=self.colour_background)
         self.field_frame.grid(row=1, column=0)
 
@@ -75,34 +81,34 @@ class Application:
         self.entry_frame.grid(row=1, column=1)
 
         self.field_filename = tkinter.Label(master=self.field_frame, text="Filename:", padx=10, bg=self.colour_background)
-        self.song_filename = tkinter.Entry(master=self.entry_frame, bg=self.colour_foreground)
+        self.song_filename = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
         self.field_filename.pack()
         self.song_filename.pack()
 
         self.field_songname = tkinter.Label(master=self.field_frame, text="Song Name:", padx=10, bg=self.colour_background)
-        self.song_songname = tkinter.Entry(master=self.entry_frame, bg=self.colour_foreground)
+        self.song_songname = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
         self.field_songname.pack()
         self.song_songname.pack()
 
         self.field_artist = tkinter.Label(master=self.field_frame, text="Artist:", padx=10, bg=self.colour_background)
-        self.song_artist = tkinter.Entry(master=self.entry_frame, bg=self.colour_foreground)
+        self.song_artist = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
         self.field_artist.pack()
         self.song_artist.pack()
 
         self.field_album = tkinter.Label(master=self.field_frame, text="Album:", padx=10, bg=self.colour_background)
-        self.song_album = tkinter.Entry(master=self.entry_frame, bg=self.colour_foreground)
+        self.song_album = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
         self.field_album.pack()
         self.song_album.pack()
 
         self.field_track_num = tkinter.Label(master=self.field_frame, text="Track Number:", padx=10, bg=self.colour_background)
-        self.song_track_num = tkinter.Entry(master=self.entry_frame, bg=self.colour_foreground)
+        self.song_track_num = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
         self.song_track_num.bind("<Return>", self.save_song)
         self.field_track_num.pack()
         self.song_track_num.pack()
 
         self.save_song_frame = tkinter.Frame(master=self.song_frame, bg=self.colour_background)
         self.save_song_frame.grid(row=2, column=1)
-        self.save_song_button = tkinter.Button(master=self.save_song_frame, text="Save Song", padx=10, pady=2)
+        self.save_song_button = tkinter.Button(master=self.save_song_frame, text="Save Song", padx=20, pady=2)
         self.save_song_button.bind("<Button-1>", self.save_song)
         self.save_song_button.pack()
 
@@ -126,6 +132,18 @@ class Application:
         self.song_album.bind("<Return>", self.tab_album)
         self.song_album.bind("<Tab>", self.tab_album)
 
+        # SET DIRECTORY
+        self.directory_frame = tkinter.Frame(master=self.right_frame, bg=self.colour_background)
+        self.directory_frame.grid(row=1, column=0, padx=5)
+        self.directory_text = tkinter.Label(master=self.directory_frame, text="Directory:", padx=10, bg=self.colour_background)
+        self.directory_text.pack()
+        self.directory = tkinter.Entry(master=self.directory_frame, width=55, bg=self.colour_foreground)
+        self.directory.bind("<Return>", self.set_directory)
+        self.directory.pack()
+        self.directory_button = tkinter.Button(master=self.directory_frame, text="Choose Folder", padx=10, pady=2)
+        self.directory_button.bind("<Button-1>", self.select_directory)
+        self.directory_button.pack()
+
     def tab_songname(self, _):
         self.song_artist.focus_set()
         if len(self.song_songname.get()) == 0:
@@ -144,15 +162,23 @@ class Application:
 
     def start(self):
         self.window.mainloop()
+    
+    def check_thread(self):
+        if threading.active_count() > 1:
+            self.error("Download in progress, please wait...")
+            return False
+        else:
+            return True
 
     def start_download(self, _):
-        if threading.active_count() < 2:
+        if self.check_thread():
             self.debug("Initializing download.")
             self.thread = threading.Thread(target=self.download)
             self.thread.daemon = True
             self.thread.start()
-        else:
-            self.error("Download already in progress, please wait")
+
+            # Don't allow the user to change the directory while a download is running
+            self.directory.config(state="disabled")
 
     def download(self):
         data = self.song_input.get("1.0", tkinter.END).split('\n')
@@ -183,6 +209,7 @@ class Application:
                 "preferredcodec": "mp3",
                 "preferredquality": "192",
             }],
+            "outtmpl": f"{self.directory.get()}\\%(title)s.%(ext)s",
             "logger": self
         })
 
@@ -191,17 +218,8 @@ class Application:
             url = songs[i]
             try:
                 data = audio.extract_info(url)
-                data['title'] = data['title'].replace('"', "'")
-                oldtitle = f"{data['title']}-{data['id']}.mp3"
-                newtitle = f"{data['title']}.mp3"
-                try:
-                    os.rename(oldtitle, newtitle)
-                except Exception as e:
-                    self.error(f"Failed to rename {oldtitle}")
-                    print(e)
-                    self.add_song(oldtitle)
-                    continue
-                self.add_song(newtitle)
+                title = f"{data['title']}.mp3"  # data['ext'] returns m4a
+                self.add_song(title)
             except Exception as e:
                 print(e)
                 failed.append(i)
@@ -212,7 +230,10 @@ class Application:
             for i in failed:
                 self.print(songs[i])
 
-        self.print(f"\nDownload Complete!\nFiles located at {self.path}\n")
+        self.print(f"\nDownload Complete!\nFiles located at {self.directory.get()}\n")
+
+        # Reallow users to edit the directory
+        self.directory.config(state="normal")
 
     def get_playlist_songs(self, url):
         out = []
@@ -232,7 +253,7 @@ class Application:
         return out
 
     def initialize_songs(self, _=None):
-        files = os.listdir()
+        files = os.listdir(self.directory.get())
         new_songs = []
         for f in files:
             n = f.rsplit('.', 1)
@@ -252,6 +273,7 @@ class Application:
         self.songs = new_new_songs
 
         self.debug(f"{len(self.songs)} songs loaded.")
+        self.clear_song()
         self.update_songs()
 
     def update_songs(self):
@@ -271,9 +293,9 @@ class Application:
         if self.selected_song.get() == "":
             return
         try:
-            song = Song(self.selected_song.get())
+            song = Song(self.selected_song.get(), self.directory.get())
         except Exception as e:
-            self.error(f"Cannot load {self.selected_song.get()}")
+            self.error(f"Cannot load {os.path.join(self.directory.get(), self.selected_song.get())}")
             print(e)
             return
         return song
@@ -326,7 +348,7 @@ class Application:
                 new_fn += '.mp3'
             self.songs[i] = new_fn
             try:
-                os.rename(self.selected_song.get(), new_fn)
+                os.rename(os.path.join(self.directory.get(), self.selected_song.get()), os.path.join(self.directory.get(), new_fn))
             except Exception as e:
                 print(e)
                 self.error(f"Failed to rename {self.selected_song.get()}.mp3")
@@ -334,6 +356,37 @@ class Application:
         self.debug(f"Song updated successfully!")
         self.update_songs()
         self.clear_song()
+    
+    def reset_directory(self):
+        self.directory.delete(0, tkinter.END)
+        self.directory.insert(0, os.getcwd().replace("\\", "/"))
+
+    def set_directory(self, _):
+        self.check_directory()
+        self.initialize_songs()
+
+    def select_directory(self, _):
+        if self.check_thread():
+            directory = tkinter.filedialog.askdirectory(initialdir=os.getcwd())
+            if len(directory) == 0:
+                return
+            self.directory.delete(0, tkinter.END)
+            self.directory.insert(0, directory)
+            self.check_directory()
+            self.initialize_songs()
+
+    def check_directory(self):
+        if not os.path.exists(self.directory.get()):
+            self.reset_directory()
+            self.error(f"Could not find directory, resetting to default.")
+
+    def icon_path(self, path):
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath("resources/")
+
+        return os.path.join(base_path, path)
 
     def initialize_colours(self):
         self.colour_background = "DimGray"
