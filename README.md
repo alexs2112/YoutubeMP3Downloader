@@ -15,6 +15,7 @@ Additional functionality to set MP3 metadata and rename those files once they ha
       - Song Name auto populates to the Filename without file extensions
       - Artist auto populates to the last saved artist
       - Album auto populates to the last saved album
+      - Hitting `Return` while in Track Number (the last entry field) will save the current song and load the next song (if available)
 
 ### Build
  - The attached `build.bat` batch script will construct an executable to use in `/dist`.

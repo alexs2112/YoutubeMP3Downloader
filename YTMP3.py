@@ -102,7 +102,7 @@ class Application:
 
         self.field_track_num = tkinter.Label(master=self.field_frame, text="Track Number:", padx=10, bg=self.colour_background)
         self.song_track_num = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
-        self.song_track_num.bind("<Return>", self.save_song)
+        self.song_track_num.bind("<Return>", self.save_and_next_song)
         self.field_track_num.pack()
         self.song_track_num.pack()
 
@@ -276,13 +276,14 @@ class Application:
         self.clear_song()
         self.update_songs()
 
-    def update_songs(self):
+    def update_songs(self, clear=True):
         menu = self.song_options["menu"]
         menu.delete(0, "end")
         for song in self.songs:
             menu.add_command(label=song, 
                              command=lambda value=song: self.selected_song.set(value))
-        self.selected_song.set("")
+        if clear:
+            self.selected_song.set("")
 
     def add_song(self, song_filename):
         self.songs.append(song_filename)
@@ -311,6 +312,23 @@ class Application:
         self.song_track_num.insert(0, song.get_tag('track_num'))
         self.song_filename.focus_set()
 
+    def save_and_next_song(self, _):
+        self.save_song(_, False)
+        if len(self.songs) == 0:
+            self.selected_song.set("")
+            return
+        song = self.get_selected_song()
+        if song == None:
+            song = self.songs[0]
+        else:
+            i = self.songs.index(song.filename)
+            if (i >= len(self.songs) - 1):
+                self.selected_song.set("")
+                return
+            song = self.songs[i+1]
+        self.selected_song.set(song)
+        self.select_song(None)
+
     def clear_song(self):
         self.song_filename.delete(0, tkinter.END)
         self.song_songname.delete(0, tkinter.END)
@@ -318,7 +336,7 @@ class Application:
         self.song_album.delete(0, tkinter.END)
         self.song_track_num.delete(0, tkinter.END)
 
-    def save_song(self, _):
+    def save_song(self, _, clear=True):
         song = self.get_selected_song()
         if song == None: return
 
@@ -354,7 +372,7 @@ class Application:
                 self.error(f"Failed to rename {self.selected_song.get()}.mp3")
                 self.error("Please refresh.")
         self.debug(f"Song updated successfully!")
-        self.update_songs()
+        self.update_songs(clear)
         self.clear_song()
     
     def reset_directory(self):
