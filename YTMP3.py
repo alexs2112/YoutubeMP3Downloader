@@ -1,5 +1,5 @@
 import tkinter, tkinter.filedialog, threading, os, sys, eyed3
-from youtube_dl import YoutubeDL
+from yt_dlp import YoutubeDL
 
 class Song:
     def __init__(self, file, path):
@@ -367,6 +367,7 @@ class Application:
             self.songs[i] = new_fn
             try:
                 os.rename(os.path.join(self.directory.get(), self.selected_song.get()), os.path.join(self.directory.get(), new_fn))
+                self.selected_song.set(new_fn)
             except Exception as e:
                 print(e)
                 self.error(f"Failed to rename {self.selected_song.get()}.mp3")
