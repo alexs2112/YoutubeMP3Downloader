@@ -218,7 +218,14 @@ class Application:
             url = songs[i]
             try:
                 data = audio.extract_info(url)
-                title = f"{data['title']}.mp3"  # data['ext'] returns m4a
+                try:
+                    filepath = data['requested_downloads'][0]['filepath']
+                    title = os.path.basename(filepath)
+                except Exception as e:
+                    # The video title is not accurate to the filename
+                    # yt-dlp replaces certain punctuation marks to make them windows safe
+                    title = f"{data['title']}.mp3"  # data['ext'] returns m4a
+
                 self.add_song(title)
             except Exception as e:
                 print(e)
