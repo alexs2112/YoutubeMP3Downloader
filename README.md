@@ -1,9 +1,14 @@
 # Youtube to MP3
-A simple tkinter UI that handles downloading music from youtube videos or playlists as MP3 files.
+A simple application to handle downloading a list of youtube videos or playlists as MP3 files.
 
 Additional functionality to set MP3 metadata and rename those files once they have been downloaded.
 
-![Screenshot.png](resources/Screenshot.png)
+<img src='resources/Screenshot.png' width='500'>
+
+### Application
+There are two ways to run the application.
+ 1. Run the python code through the command line directly with `python YTMP3.py`
+ 2. Run the [YTMP3.exe](dist/YTMP3.exe) executable. This is a standalone file and can be downloaded directly from github, it does not require the rest of the repo to function (simply navigate to the file and click `download`)
 
 ### Usage
  - Copy and paste youtube video links into the input text box
@@ -34,6 +39,6 @@ Additional functionality to set MP3 metadata and rename those files once they ha
    - Mitigated for now by allowing the executable to open a terminal window, although its ugly and useless
 
 ### Eventual Roadmap:
- - Multithreading to download multiple songs at once (requires big UI update to display progress differently)
  - Add songs to a download queue while a download is in progress
- - Fix the ffmpeg windowed issue, add ffmpeg to the exe build so users don't need to add it to their PATH
+ - Fix the ffmpeg windowed issue
+ - Add ffmpeg to the exe build so users don't need to add it to their PATH
