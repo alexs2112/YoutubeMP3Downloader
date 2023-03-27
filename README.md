@@ -10,6 +10,13 @@ There are two ways to run the application.
  1. Run the python code through the command line directly with `python YTMP3.py`
  2. Run the [YTMP3.exe](dist/YTMP3.exe) executable. This is a standalone file and can be downloaded directly from github, it does not require the rest of the repo to function (simply navigate to the file and click `download`)
 
+### Requirements:
+These requirements are *only* required for running the application through the command line or building the executable through `build.bat`. They are *not* required for running the built `YTMP3.exe` executable.
+  - yt-dlp: https://pypi.org/project/yt-dlp/ (`pip install yt-dlp`)
+  - eyed3: https://eyed3.readthedocs.io/en/latest/ (`pip install eyed3`)
+  - The ffmpeg executable needs to be added to `resources/`
+    - There is a current build of ffmpeg in [resources/ffmpeg.zip](resources/ffmpeg.zip), unzip this and move `ffmpeg.exe` to `resources/`
+
 ### Usage
  - Copy and paste youtube video links into the input text box
    - These can take the form of the youtube shareable link (`https://youtu.be/<song_id>`) or full youtube watch links (`https://www.youtube.com/watch?<song_id>&<ignored_parameters>`)
@@ -27,18 +34,11 @@ There are two ways to run the application.
  - `/build` can be safely deleted after the build is complete.
  - Requires pyinstaller (`pip install pyinstaller`)
 
-### Dependencies:
- - ffmpeg needs to be added to your PATH: https://ffmpeg.org/
- - If you run the python script through the command line you need two further python packages:
-    - youtube_dl: https://pypi.org/project/youtube_dl/
-    - eyed3: https://eyed3.readthedocs.io/en/latest/
-
 ### Known Bugs:
- - Sometimes a youtube video download will randomly fail with a `403 Forbidden` error. It will keep track of each failure and paste the link at the bottom of the console logs once downloads are complete. You can retry the list afterwards and it will usually work on a second try. This is a problem with youtube.
+ - Downloads can randomly fail with a `403 Not Found` error, retrying the download typically works. This is an issue with Youtube.
  - When downloading files through the built executable, ffmpeg will frequently open and close terminals when creating the mp3 if `--windowed` is set in the build script.
    - Mitigated for now by allowing the executable to open a terminal window, although its ugly and useless
 
 ### Eventual Roadmap:
  - Add songs to a download queue while a download is in progress
  - Fix the ffmpeg windowed issue
- - Add ffmpeg to the exe build so users don't need to add it to their PATH

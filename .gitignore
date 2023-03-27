@@ -1,6 +1,7 @@
 __pycache__/
 build/
 temp/
+resources/ffmpeg.exe
 *.spec
 *.mp3
 *.part

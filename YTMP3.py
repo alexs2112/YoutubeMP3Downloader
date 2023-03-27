@@ -34,7 +34,7 @@ class Application:
         self.window = tkinter.Tk()
         self.window.title("Youtube to MP3")
         self.window.resizable(False, False)
-        self.window.iconbitmap(self.icon_path("icon.ico"))
+        self.window.iconbitmap(self.executable_path("icon.ico"))
         self.last_log = None
         self.last_artist = ""
         self.last_album = ""
@@ -209,6 +209,7 @@ class Application:
                 "preferredcodec": "mp3",
                 "preferredquality": "192",
             }],
+            "ffmpeg_location": self.executable_path("ffmpeg.exe"),
             "outtmpl": f"{self.directory.get()}\\%(title)s.%(ext)s",
             "logger": self
         })
@@ -406,7 +407,7 @@ class Application:
             self.reset_directory()
             self.error(f"Could not find directory, resetting to default.")
 
-    def icon_path(self, path):
+    def executable_path(self, path):
         try:
             base_path = sys._MEIPASS
         except Exception:
