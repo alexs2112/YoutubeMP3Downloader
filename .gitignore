@@ -4,5 +4,6 @@ temp/
 resources/ffmpeg.exe
 *.spec
 *.mp3
+*.webm
 *.part
 *.m4a
