@@ -9,6 +9,12 @@ class Song:
         self.last_artist = ""
         self.last_album = ""
 
+        ext = self.filename.rsplit(".", 1)
+        if len(ext) > 1:
+            self.extension = ext[1]
+        else:
+            self.extension = ''
+
     def set_tag(self, tag, value):
         if tag == "artist": self.file.tag.artist = value
         elif tag == "album": self.file.tag.album = value
@@ -44,6 +50,7 @@ class Application:
         self.setup()
         self.reset_directory()
         self.initialize_songs()
+        self.check_for_ffmpeg()
 
     def setup(self):
         self.top_frame = tkinter.Frame(bg=self.colour_background)
@@ -86,22 +93,22 @@ class Application:
         self.song_filename.pack()
 
         self.field_songname = tkinter.Label(master=self.field_frame, text="Song Name:", padx=10, bg=self.colour_background)
-        self.song_songname = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
+        self.song_songname = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
         self.field_songname.pack()
         self.song_songname.pack()
 
         self.field_artist = tkinter.Label(master=self.field_frame, text="Artist:", padx=10, bg=self.colour_background)
-        self.song_artist = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
+        self.song_artist = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
         self.field_artist.pack()
         self.song_artist.pack()
 
         self.field_album = tkinter.Label(master=self.field_frame, text="Album:", padx=10, bg=self.colour_background)
-        self.song_album = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
+        self.song_album = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
         self.field_album.pack()
         self.song_album.pack()
 
         self.field_track_num = tkinter.Label(master=self.field_frame, text="Track Number:", padx=10, bg=self.colour_background)
-        self.song_track_num = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground)
+        self.song_track_num = tkinter.Entry(master=self.entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
         self.song_track_num.bind("<Return>", self.save_and_next_song)
         self.field_track_num.pack()
         self.song_track_num.pack()
@@ -137,7 +144,7 @@ class Application:
         self.directory_frame.grid(row=1, column=0, padx=5)
         self.directory_text = tkinter.Label(master=self.directory_frame, text="Directory:", padx=10, bg=self.colour_background)
         self.directory_text.pack()
-        self.directory = tkinter.Entry(master=self.directory_frame, width=55, bg=self.colour_foreground)
+        self.directory = tkinter.Entry(master=self.directory_frame, width=55, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
         self.directory.bind("<Return>", self.set_directory)
         self.directory.pack()
         self.directory_button = tkinter.Button(master=self.directory_frame, text="Choose Folder", padx=10, pady=2)
@@ -148,7 +155,7 @@ class Application:
         self.song_artist.focus_set()
         if len(self.song_songname.get()) == 0:
             path = self.song_filename.get()
-            self.song_songname.insert(0, path.rsplit(".mp3")[0])
+            self.song_songname.insert(0, path.rsplit(".mp3")[0].rsplit(".webm")[0].rsplit(".m4a")[0])
     
     def tab_artist(self, _):
         self.song_album.focus_set()
@@ -180,6 +187,36 @@ class Application:
             # Don't allow the user to change the directory while a download is running
             self.directory.config(state="disabled")
 
+    def check_for_ffmpeg(self):
+        ffmpeg = self.executable_path("ffmpeg.exe")
+        if (os.path.exists(ffmpeg)):
+            return True
+        else:
+            self.warning("ffmpeg not found, files will not be converted to mp3 format.")
+            return False
+
+    def get_downloader(self):
+        # Convert to mp3 if ffmpeg is available, otherwise leave as is
+        if (self.check_for_ffmpeg()):
+            audio = YoutubeDL({
+                "format": "bestaudio",
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }],
+                "ffmpeg_location": self.executable_path("ffmpeg.exe"),
+                "outtmpl": f"{self.directory.get()}\\%(title)s.%(ext)s",
+                "logger": self
+            })
+        else:
+            audio = YoutubeDL({
+                "format": "bestaudio",
+                "outtmpl": f"{self.directory.get()}\\%(title)s.%(ext)s",
+                "logger": self
+            })
+        return audio
+
     def download(self):
         data = self.song_input.get("1.0", tkinter.END).split('\n')
         songs = []
@@ -197,23 +234,15 @@ class Application:
                     songs.append(f"https://youtu.be/{code}")
                 else:
                     self.error(f"Could not split {link} by '?v='")
+            else:
+                self.error(f"Could not read {link}, skipping.")
 
         if (len(songs) == 0):
             self.error("No songs to download")
+            self.directory.config(state="normal")
             return
 
-        audio = YoutubeDL({
-            "format": "bestaudio",
-            "postprocessors": [{
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }],
-            "ffmpeg_location": self.executable_path("ffmpeg.exe"),
-            "outtmpl": f"{self.directory.get()}\\%(title)s.%(ext)s",
-            "logger": self
-        })
-
+        audio = self.get_downloader()
         failed = []
         for i in range(len(songs)):
             url = songs[i]
@@ -223,7 +252,7 @@ class Application:
                     filepath = data['requested_downloads'][0]['filepath']
                     title = os.path.basename(filepath)
                 except Exception as e:
-                    # The video title is not accurate to the filename
+                    # The video title is not accurate to the filename, this may break
                     # yt-dlp replaces certain punctuation marks to make them windows safe
                     title = f"{data['title']}.mp3"  # data['ext'] returns m4a
 
@@ -265,7 +294,7 @@ class Application:
         new_songs = []
         for f in files:
             n = f.rsplit('.', 1)
-            if len(n) > 1 and n[1] == "mp3":
+            if len(n) > 1 and (n[1] == "mp3" or n[1] == "webm"):
                 new_songs.append(f)
 
         # If the song loaded is already in songs, leave it there
@@ -309,15 +338,26 @@ class Application:
             return
         return song
 
-    def select_song(self, _):
+    def song_is_mp3(self, song):
+        return song.extension == 'mp3'
+
+    def select_song(self, _=None):
         song = self.get_selected_song()
         if song == None: return
         self.clear_song()
         self.song_filename.insert(0, song.filename)
-        self.song_songname.insert(0, song.get_tag('title'))
-        self.song_artist.insert(0, song.get_tag('artist'))
-        self.song_album.insert(0, song.get_tag('album'))
-        self.song_track_num.insert(0, song.get_tag('track_num'))
+
+        if self.song_is_mp3(song):
+            self.song_songname.insert(0, song.get_tag('title'))
+            self.song_artist.insert(0, song.get_tag('artist'))
+            self.song_album.insert(0, song.get_tag('album'))
+            self.song_track_num.insert(0, song.get_tag('track_num'))
+        else:
+            self.song_songname.config(state="disabled")
+            self.song_artist.config(state="disabled")
+            self.song_album.config(state="disabled")
+            self.song_track_num.config(state="disabled")
+            self.warning(f"'{song.filename}' is not of mp3 format, setting metadata is disabled.")
         self.song_filename.focus_set()
 
     def save_and_next_song(self, _):
@@ -335,9 +375,13 @@ class Application:
                 return
             song = self.songs[i+1]
         self.selected_song.set(song)
-        self.select_song(None)
+        self.select_song()
 
     def clear_song(self):
+        self.song_songname.config(state="normal")
+        self.song_artist.config(state="normal")
+        self.song_album.config(state="normal")
+        self.song_track_num.config(state="normal")
         self.song_filename.delete(0, tkinter.END)
         self.song_songname.delete(0, tkinter.END)
         self.song_artist.delete(0, tkinter.END)
@@ -348,29 +392,29 @@ class Application:
         song = self.get_selected_song()
         if song == None: return
 
-        song.set_tag("artist", self.song_artist.get())
-        song.set_tag("album", self.song_album.get())
-        song.set_tag("title", self.song_songname.get())
-        self.last_artist = self.song_artist.get()
-        self.last_album = self.song_album.get()
+        if self.song_is_mp3(song):
+            song.set_tag("artist", self.song_artist.get())
+            song.set_tag("album", self.song_album.get())
+            song.set_tag("title", self.song_songname.get())
+            self.last_artist = self.song_artist.get()
+            self.last_album = self.song_album.get()
 
-        tracknum = self.song_track_num.get()
-        if tracknum.isnumeric():
-            song.set_tag("track_num", self.song_track_num.get())
-        elif tracknum != "":
-            self.debug("Only input positive integers for track number.")
+            tracknum = self.song_track_num.get()
+            if tracknum.isnumeric():
+                song.set_tag("track_num", self.song_track_num.get())
+            elif tracknum != "":
+                self.debug("Only input positive integers for track number.")
 
-        try:
-            song.save_tags()
-        except Exception as e:
-            self.error(e)
-            print(e)
-            return
+            try:
+                song.save_tags()
+            except Exception as e:
+                self.error(e)
+                print(e)
 
         new_fn = self.song_filename.get()
         if new_fn != self.selected_song.get():
             i = self.songs.index(self.selected_song.get())
-            if '.mp3' not in new_fn:
+            if '.mp3' not in new_fn and '.webm' not in new_fn:
                 new_fn += '.mp3'
             self.songs[i] = new_fn
             try:
@@ -383,7 +427,7 @@ class Application:
         self.debug(f"Song updated successfully!")
         self.update_songs(clear)
         self.clear_song()
-    
+
     def reset_directory(self):
         self.directory.delete(0, tkinter.END)
         self.directory.insert(0, os.getcwd().replace("\\", "/"))
@@ -416,8 +460,10 @@ class Application:
         return os.path.join(base_path, path)
 
     def initialize_colours(self):
+        # http://cs111.wellesley.edu/archive/cs111_fall14/public_html/labs/lab12/tkintercolor.html
         self.colour_background = "DimGray"
         self.colour_foreground = "Silver"
+        self.colour_disabled_background = "Gray"
         self.window.configure(bg=self.colour_background)
 
     # Some logging methods
