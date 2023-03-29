@@ -234,7 +234,7 @@ class Application:
                     songs.append(f"https://youtu.be/{code}")
                 else:
                     self.error(f"Could not split {link} by '?v='")
-            else:
+            elif len(link.strip()) > 0:
                 self.error(f"Could not read {link}, skipping.")
 
         if (len(songs) == 0):
