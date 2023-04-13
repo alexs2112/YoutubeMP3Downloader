@@ -453,7 +453,6 @@ class Application:
 
     def open_directory(self, _):
         self.check_directory()
-        #os.system(f"start {self.directory.get()}")
         subprocess.call(f"start {self.directory.get()}", shell=True)
 
     def check_directory(self):
