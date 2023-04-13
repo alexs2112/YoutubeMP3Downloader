@@ -1,4 +1,4 @@
-import tkinter, tkinter.filedialog, threading, os, sys, eyed3
+import tkinter, tkinter.filedialog, threading, os, subprocess, sys, eyed3
 from yt_dlp import YoutubeDL
 
 class Song:
@@ -147,9 +147,14 @@ class Application:
         self.directory = tkinter.Entry(master=self.directory_frame, width=55, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
         self.directory.bind("<Return>", self.set_directory)
         self.directory.pack()
-        self.directory_button = tkinter.Button(master=self.directory_frame, text="Choose Folder", padx=10, pady=2)
+        self.directory_button_frame = tkinter.Frame(master=self.directory_frame, bg=self.colour_background)
+        self.directory_button_frame.pack()
+        self.directory_button = tkinter.Button(master=self.directory_button_frame, text="Choose Folder", padx=10, pady=2)
         self.directory_button.bind("<Button-1>", self.select_directory)
-        self.directory_button.pack()
+        self.directory_button.grid(row=0, column=0)
+        self.open_dir_button = tkinter.Button(master=self.directory_button_frame, text="Open Folder", padx=20, pady=2)
+        self.open_dir_button.bind("<Button-1>", self.open_directory)
+        self.open_dir_button.grid(row=0, column=1)
 
     def tab_songname(self, _):
         self.song_artist.focus_set()
@@ -445,6 +450,11 @@ class Application:
             self.directory.insert(0, directory)
             self.check_directory()
             self.initialize_songs()
+
+    def open_directory(self, _):
+        self.check_directory()
+        #os.system(f"start {self.directory.get()}")
+        subprocess.call(f"start {self.directory.get()}", shell=True)
 
     def check_directory(self):
         if not os.path.exists(self.directory.get()):
