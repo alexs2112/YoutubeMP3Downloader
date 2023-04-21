@@ -232,6 +232,8 @@ class Application:
                 ids = self.get_playlist_songs(link)
                 for id in ids:
                     songs.append(f"https://youtu.be/{id}")
+            elif "music.youtube" in link:
+                songs.append(link)
             elif "www.youtube.com" in link:
                 video_code = link.split("?v=")
                 if len(video_code) == 2:
