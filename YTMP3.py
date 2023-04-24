@@ -1,39 +1,6 @@
-import tkinter, tkinter.filedialog, threading, os, subprocess, sys, eyed3
+import tkinter, tkinter.filedialog, threading, os, subprocess, sys
 from yt_dlp import YoutubeDL
-
-class Song:
-    def __init__(self, file, path):
-        self.filename = file
-        self.file = eyed3.load(os.path.join(path, file))
-
-        self.last_artist = ""
-        self.last_album = ""
-
-        ext = self.filename.rsplit(".", 1)
-        if len(ext) > 1:
-            self.extension = ext[1]
-        else:
-            self.extension = ''
-
-    def set_tag(self, tag, value):
-        if tag == "artist": self.file.tag.artist = value
-        elif tag == "album": self.file.tag.album = value
-        elif tag == "title": self.file.tag.title = value
-        elif tag == "track_num": self.file.tag.track_num = value
-        else: raise Exception(f"Unknown song file tag: <{tag}>.")
-
-    def get_tag(self, tag):
-        if tag == "artist": v = self.file.tag.artist
-        elif tag == "album": v = self.file.tag.album
-        elif tag == "title": v = self.file.tag.title
-        elif tag == "track_num": v = self.file.tag.track_num[0]
-        else: raise Exception(f"Unknown song file tag: <{tag}>.")
-        
-        if v == None: return ""
-        return v
-
-    def save_tags(self):
-        self.file.tag.save()
+from song import Song
 
 class Application:
     def __init__(self):
@@ -45,6 +12,7 @@ class Application:
         self.last_artist = ""
         self.last_album = ""
         self.songs = []
+        self.metadata = tkinter.IntVar()
         self.selected_song = tkinter.StringVar()
         self.initialize_colours()
         self.setup()
@@ -60,13 +28,17 @@ class Application:
         self.input_frame.grid(row=0, column=0)
 
         self.input_title = tkinter.Label(master=self.input_frame, text="Youtube URLs:", pady=6, bg=self.colour_background)
-        self.input_title.grid(row=0, column=0)
+        self.input_title.pack()
         self.song_input = tkinter.Text(master=self.input_frame, width=30, height=15, bg=self.colour_foreground, undo=True)
-        self.song_input.grid(row=1, column=0)
+        self.song_input.pack()
 
-        self.dl_button = tkinter.Button(master=self.input_frame, text="Start Download...", padx=10, pady=2)
+        self.input_frame_buttons = tkinter.Frame(master=self.input_frame, bg=self.colour_background)
+        self.input_frame_buttons.pack()
+        self.dl_button = tkinter.Button(master=self.input_frame_buttons, text="Start Download", padx=10, pady=2)
         self.dl_button.bind("<Button-1>", self.start_download)
-        self.dl_button.grid(row=2, column=0)
+        self.dl_button.grid(row=0, column=0)
+        self.enable_metadata_button = tkinter.Checkbutton(master=self.input_frame_buttons, text="Fill Metadata", padx=10, pady=2, variable=self.metadata, bg=self.colour_background, activebackground=self.colour_background)
+        self.enable_metadata_button.grid(row=0, column=1)
 
         self.right_frame = tkinter.Frame(master=self.top_frame, bg=self.colour_background)
         self.right_frame.grid(row=0, column=1)
@@ -200,16 +172,21 @@ class Application:
             self.warning("ffmpeg not found, files will not be converted to mp3 format.")
             return False
 
-    def get_downloader(self):
+    def get_downloader(self, embed_metadata):
         # Convert to mp3 if ffmpeg is available, otherwise leave as is
         if (self.check_for_ffmpeg()):
+            postprocessors = [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }]
+            if embed_metadata: postprocessors.append({
+                "key": "FFmpegMetadata",
+                "add_metadata": True
+            })
             audio = YoutubeDL({
                 "format": "bestaudio",
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
-                }],
+                "postprocessors": postprocessors,
                 "ffmpeg_location": self.executable_path("ffmpeg.exe"),
                 "outtmpl": f"{self.directory.get()}\\%(title)s.%(ext)s",
                 "logger": self
@@ -249,7 +226,7 @@ class Application:
             self.directory.config(state="normal")
             return
 
-        audio = self.get_downloader()
+        audio = self.get_downloader(embed_metadata = self.metadata.get())
         failed = []
         for i in range(len(songs)):
             url = songs[i]
@@ -455,7 +432,7 @@ class Application:
 
     def open_directory(self, _):
         self.check_directory()
-        subprocess.call(f"start {self.directory.get()}", shell=True)
+        os.startfile(self.directory.get())
 
     def check_directory(self):
         if not os.path.exists(self.directory.get()):

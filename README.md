@@ -27,6 +27,11 @@ These requirements are *only* required for running the application through the c
       - Album auto populates to the last saved album
       - Hitting `Return` while in Track Number (the last entry field) will save the current song and load the next song (if available)
 
+### Fill Metadata
+Selecting `Fill Metadata` before starting the download will attempt to autopopulate the metadata fields of downloaded songs using data from Youtube/Youtube Music.
+
+This data is not always available and can autopopulate fields with publishers or Youtube channel names. Youtube Music has better results although it is a little inconsistent.
+
 ### Build
  - The attached `build.bat` batch script will construct an executable to use in `/dist`.
  - The `/build` directory can be safely deleted after the build is complete.
