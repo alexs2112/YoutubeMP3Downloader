@@ -293,6 +293,10 @@ class Application:
             new_new_songs.append(song)
         self.songs = new_new_songs
 
+        # Sort loaded songs by Artist + Album + Track Number
+        d = self.directory.get()
+        self.songs.sort(key=lambda s: Song(s, d).sort_attributes())
+
         self.debug(f"{len(self.songs)} songs loaded.")
         self.clear_song()
         self.update_songs()

@@ -30,6 +30,13 @@ class Song:
         
         if v == None: return ""
         return v
+    
+    def sort_attributes(self):
+        if self.extension != "mp3":
+            return ("", "", -1)
+        t = self.get_tag("track_num")
+        if t == '': t = -1
+        return (self.get_tag("artist"), self.get_tag("album"), t)
 
     def save_tags(self):
         self.file.tag.save()
