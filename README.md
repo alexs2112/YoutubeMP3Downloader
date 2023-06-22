@@ -14,6 +14,7 @@ There are two ways to run the application.
 These requirements are *only* required for running the application through the command line or building the executable through `build.bat`. They are *not* required for running the built `YTMP3.exe` executable.
   - yt-dlp: https://pypi.org/project/yt-dlp/ (`pip install yt-dlp`)
   - eyed3: https://eyed3.readthedocs.io/en/latest/ (`pip install eyed3`)
+  - ytmusicapi: https://ytmusicapi.readthedocs.io/en/stable/ (`pip install ytmusicapi`)
   - The ffmpeg executable needs to be added to `resources/`
     - There is a current build of ffmpeg in [resources/ffmpeg.zip](resources/ffmpeg.zip), unzip this and move `ffmpeg.exe` to `resources/`
 

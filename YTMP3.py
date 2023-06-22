@@ -1,6 +1,8 @@
 import tkinter, tkinter.filedialog, threading, os
 import system.downloader
+from system.config import *
 from system.song_file import SongFile
+from system.search import Search
 
 class Application:
     def __init__(self):
@@ -8,100 +10,110 @@ class Application:
         self.window.title("Youtube to MP3")
         self.window.resizable(False, False)
         self.window.iconbitmap(system.downloader.executable_path("icon.ico"))
+        self.window.configure(bg=COLOUR_BACKGROUND)
         self.last_log = None
         self.last_artist = ""
         self.last_album = ""
         self.songs = []
         self.metadata = tkinter.IntVar()
+        self.metadata.set(1)
         self.selected_song = tkinter.StringVar()
-        self.initialize_colours()
+        self.search_menu = Search()
         self.setup()
         self.reset_directory()
         self.initialize_songs()
         system.downloader.check_for_ffmpeg(self)
 
     def setup(self):
-        self.top_frame = tkinter.Frame(bg=self.colour_background)
+        self.top_frame = tkinter.Frame(bg=COLOUR_BACKGROUND)
         self.top_frame.grid(row=0, column=0)
 
-        input_frame = tkinter.Frame(master=self.top_frame, bg=self.colour_background)
-        input_frame.grid(row=0, column=0)
-        self.setup_manual_input(input_frame)
+        left_frame = tkinter.Frame(master=self.top_frame, bg=COLOUR_BACKGROUND)
+        left_frame.grid(row=0, column=0)
+        self.setup_manual_input(left_frame)
 
-        right_frame = tkinter.Frame(master=self.top_frame, bg=self.colour_background)
-        right_frame.grid(row=0, column=1)
+        center_frame = tkinter.Frame(master=self.top_frame, bg=COLOUR_BACKGROUND)
+        center_frame.grid(row=0, column=1)
+        self.search_menu.pack(center_frame)
+
+        download = tkinter.Button(master=center_frame, text="Download", padx=10, pady=2)
+        download.bind("<Button-1>", self.start_download)
+        download.pack()
+
+        right_frame = tkinter.Frame(master=self.top_frame, bg=COLOUR_BACKGROUND)
+        right_frame.grid(row=0, column=2)
         self.setup_song_metadata(right_frame)
         self.setup_directory(right_frame)
 
-        self.bot_frame = tkinter.Frame(bg=self.colour_background)
+        self.bot_frame = tkinter.Frame(bg=COLOUR_BACKGROUND)
         self.bot_frame.grid(row=1, column=0)
-        self.console = tkinter.Text(master=self.bot_frame, height=20, bg=self.colour_foreground)
+        self.console = tkinter.Text(master=self.bot_frame, height=20, bg=COLOUR_FOREGROUND)
         self.console.pack(fill=tkinter.BOTH, expand=True)
     
     def setup_manual_input(self, frame):
-        input_title = tkinter.Label(master=frame, text="Youtube URLs:", pady=6, bg=self.colour_background)
+        input_title = tkinter.Label(master=frame, text="Youtube URLs:", pady=6, bg=COLOUR_BACKGROUND)
         input_title.pack()
-        self.song_input = tkinter.Text(master=frame, width=30, height=15, bg=self.colour_foreground, undo=True)
+        self.song_input = tkinter.Text(master=frame, width=30, height=15, bg=COLOUR_FOREGROUND, undo=True)
         self.song_input.pack()
 
-        frame_buttons = tkinter.Frame(master=frame, bg=self.colour_background)
+        frame_buttons = tkinter.Frame(master=frame, bg=COLOUR_BACKGROUND)
         frame_buttons.pack()
         dl_button = tkinter.Button(master=frame_buttons, text="Start Download", padx=10, pady=2)
         dl_button.bind("<Button-1>", self.start_download)
         dl_button.grid(row=0, column=0)
-        enable_metadata_button = tkinter.Checkbutton(master=frame_buttons, text="Fill Metadata", padx=10, pady=2, variable=self.metadata, bg=self.colour_background, activebackground=self.colour_background)
+        enable_metadata_button = tkinter.Checkbutton(master=frame_buttons, text="Fill Metadata", padx=10, pady=2, variable=self.metadata, bg=COLOUR_BACKGROUND, activebackground=COLOUR_BACKGROUND)
         enable_metadata_button.grid(row=0, column=1)
     
     def setup_song_metadata(self, frame):
-        song_frame = tkinter.Frame(master=frame, bg=self.colour_background)
+        song_frame = tkinter.Frame(master=frame, bg=COLOUR_BACKGROUND)
         song_frame.grid(row=0, column=0, pady=20, sticky="W")
 
         # SELECT SONG
-        select_song_frame = tkinter.Frame(master=song_frame, bg=self.colour_background)
+        select_song_frame = tkinter.Frame(master=song_frame, bg=COLOUR_BACKGROUND)
         select_song_frame.grid(row=0, column=1)
         self.song_options = tkinter.OptionMenu(select_song_frame, self.selected_song, None, [])
         self.song_options.bind("<Configure>", self.select_song)
         self.song_options.pack()
 
         # SET SONG DETAILS
-        field_frame = tkinter.Frame(master=song_frame, bg=self.colour_background)
+        field_frame = tkinter.Frame(master=song_frame, bg=COLOUR_BACKGROUND)
         field_frame.grid(row=1, column=0)
-        entry_frame = tkinter.Frame(master=song_frame, bg=self.colour_background)
+        entry_frame = tkinter.Frame(master=song_frame, bg=COLOUR_BACKGROUND)
         entry_frame.grid(row=1, column=1)
 
-        field_filename = tkinter.Label(master=field_frame, text="Filename:", padx=10, bg=self.colour_background)
-        self.song_filename = tkinter.Entry(master=entry_frame, width=25, bg=self.colour_foreground)
+        field_filename = tkinter.Label(master=field_frame, text="Filename:", padx=10, bg=COLOUR_BACKGROUND)
+        self.song_filename = tkinter.Entry(master=entry_frame, width=25, bg=COLOUR_FOREGROUND)
         field_filename.pack()
         self.song_filename.pack()
 
-        field_songname = tkinter.Label(master=field_frame, text="Song Name:", padx=10, bg=self.colour_background)
-        self.song_songname = tkinter.Entry(master=entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
+        field_songname = tkinter.Label(master=field_frame, text="Song Name:", padx=10, bg=COLOUR_BACKGROUND)
+        self.song_songname = tkinter.Entry(master=entry_frame, width=25, bg=COLOUR_FOREGROUND, disabledbackground=COLOUR_DISABLED_BACKGROUND)
         field_songname.pack()
         self.song_songname.pack()
 
-        field_artist = tkinter.Label(master=field_frame, text="Artist:", padx=10, bg=self.colour_background)
-        self.song_artist = tkinter.Entry(master=entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
+        field_artist = tkinter.Label(master=field_frame, text="Artist:", padx=10, bg=COLOUR_BACKGROUND)
+        self.song_artist = tkinter.Entry(master=entry_frame, width=25, bg=COLOUR_FOREGROUND, disabledbackground=COLOUR_DISABLED_BACKGROUND)
         field_artist.pack()
         self.song_artist.pack()
 
-        field_album = tkinter.Label(master=field_frame, text="Album:", padx=10, bg=self.colour_background)
-        self.song_album = tkinter.Entry(master=entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
+        field_album = tkinter.Label(master=field_frame, text="Album:", padx=10, bg=COLOUR_BACKGROUND)
+        self.song_album = tkinter.Entry(master=entry_frame, width=25, bg=COLOUR_FOREGROUND, disabledbackground=COLOUR_DISABLED_BACKGROUND)
         field_album.pack()
         self.song_album.pack()
 
-        field_track_num = tkinter.Label(master=field_frame, text="Track Number:", padx=10, bg=self.colour_background)
-        self.song_track_num = tkinter.Entry(master=entry_frame, width=25, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
+        field_track_num = tkinter.Label(master=field_frame, text="Track Number:", padx=10, bg=COLOUR_BACKGROUND)
+        self.song_track_num = tkinter.Entry(master=entry_frame, width=25, bg=COLOUR_FOREGROUND, disabledbackground=COLOUR_DISABLED_BACKGROUND)
         self.song_track_num.bind("<Return>", self.save_and_next_song)
         field_track_num.pack()
         self.song_track_num.pack()
 
-        save_song_frame = tkinter.Frame(master=song_frame, bg=self.colour_background)
+        save_song_frame = tkinter.Frame(master=song_frame, bg=COLOUR_BACKGROUND)
         save_song_frame.grid(row=2, column=1)
         save_song_button = tkinter.Button(master=save_song_frame, text="Save Song", padx=20, pady=2)
         save_song_button.bind("<Button-1>", self.save_song)
         save_song_button.pack()
 
-        refresh_songs_frame = tkinter.Frame(master=song_frame, bg=self.colour_background)
+        refresh_songs_frame = tkinter.Frame(master=song_frame, bg=COLOUR_BACKGROUND)
         refresh_songs_frame.grid(row=3, column=1)
         refresh_songs_button = tkinter.Button(master=refresh_songs_frame, text="Refresh Songs", padx=10, pady=2)
         refresh_songs_button.bind("<Button-1>", self.initialize_songs)
@@ -117,16 +129,16 @@ class Application:
         self.song_album.bind("<Tab>", self.tab_album)
     
     def setup_directory(self, frame):
-        directory_frame = tkinter.Frame(master=frame, bg=self.colour_background)
+        directory_frame = tkinter.Frame(master=frame, bg=COLOUR_BACKGROUND)
         directory_frame.grid(row=1, column=0, padx=5)
 
-        directory_text = tkinter.Label(master=directory_frame, text="Directory:", padx=10, bg=self.colour_background)
+        directory_text = tkinter.Label(master=directory_frame, text="Directory:", padx=10, bg=COLOUR_BACKGROUND)
         directory_text.pack()
-        self.directory = tkinter.Entry(master=directory_frame, width=55, bg=self.colour_foreground, disabledbackground=self.colour_disabled_background)
+        self.directory = tkinter.Entry(master=directory_frame, width=55, bg=COLOUR_FOREGROUND, disabledbackground=COLOUR_DISABLED_BACKGROUND)
         self.directory.bind("<Return>", self.set_directory)
         self.directory.pack()
 
-        directory_button_frame = tkinter.Frame(master=directory_frame, bg=self.colour_background)
+        directory_button_frame = tkinter.Frame(master=directory_frame, bg=COLOUR_BACKGROUND)
         directory_button_frame.pack()
         directory_button = tkinter.Button(master=directory_button_frame, text="Choose Folder", padx=10, pady=2)
         directory_button.bind("<Button-1>", self.select_directory)
@@ -174,7 +186,7 @@ class Application:
     def download(self):
         system.downloader.download(
             self, 
-            self.song_input.get("1.0", tkinter.END).split('\n'),
+            self.song_input.get("1.0", tkinter.END).split('\n') + self.search_menu.get_youtube_links(),
             self.directory.get(),
             self.metadata.get())
 
@@ -328,13 +340,6 @@ class Application:
         if not os.path.exists(self.directory.get()):
             self.reset_directory()
             self.error(f"Could not find directory, resetting to default.")
-
-    def initialize_colours(self):
-        # http://cs111.wellesley.edu/archive/cs111_fall14/public_html/labs/lab12/tkintercolor.html
-        self.colour_background = "DimGray"
-        self.colour_foreground = "Silver"
-        self.colour_disabled_background = "Gray"
-        self.window.configure(bg=self.colour_background)
 
     # Some logging methods
     def print(self, msg):
