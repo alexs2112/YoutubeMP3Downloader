@@ -2,6 +2,7 @@ __pycache__/
 build/
 temp/
 resources/ffmpeg.exe
+dist/
 *.spec
 *.mp3
 *.webm
